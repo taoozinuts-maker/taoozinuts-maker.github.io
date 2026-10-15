@@ -1,0 +1,810 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#0b1120" />
+  <meta name="description" content="Explore Sperner's lemma in 1, 2 and 3 dimensions through interactive triangulations and valid vertex colorings." />
+  <title>Sperner Studio — An Interactive Lemma</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --page: #0b1120;
+      --surface: #111b2e;
+      --surface-2: #142137;
+      --surface-3: #1b2a42;
+      --line: rgba(167, 191, 231, .13);
+      --line-strong: rgba(171, 191, 225, .22);
+      --text: #f4f5fb;
+      --muted: #93a3bd;
+      --soft: #becadd;
+      --lavender: #b4aeff;
+      --gold: #ffd58b;
+      --blue: #889ffb;
+      --coral: #fa8992;
+      --green: #61d7b2;
+      --amber: #ffc976;
+      font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      -webkit-font-smoothing: antialiased;
+      font-synthesis: none;
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      background: radial-gradient(ellipse 75% 60% at 45% -18%, #1a2452 0%, transparent 75%), var(--page);
+      min-height: 100vh;
+      color: var(--text);
+    }
+    button, input { font: inherit; }
+    button { -webkit-tap-highlight-color: transparent; }
+    button:focus-visible, input:focus-visible { outline: 2px solid var(--lavender); outline-offset: 4px; }
+    .shell { max-width: 1460px; padding: 31px clamp(20px, 4.3vw, 68px) 54px; margin: 0 auto; }
+    .topbar { display: flex; justify-content: space-between; align-items: center; gap: 20px; }
+    .identity { display: inline-flex; align-items: center; gap: 11px; text-decoration: none; color: inherit; }
+    .logo { width: 38px; height: 38px; display: grid; place-items: center; border: 1px solid rgba(182, 184, 255, .35); background: rgba(155, 162, 255, .1); border-radius: 12px; }
+    .logo svg { width: 27px; height: 27px; overflow: visible; }
+    .brand { font-size: 15px; letter-spacing: -.02em; font-weight: 760; }
+    .brand span { color: var(--lavender); font-weight: 500; }
+    .top-caption { color: var(--muted); font-size: 12px; letter-spacing: .13em; text-transform: uppercase; font-weight: 700; }
+    .intro { display: flex; justify-content: space-between; align-items: end; gap: 30px; padding-top: clamp(41px, 5vw, 74px); padding-bottom: 39px; }
+    .eyebrow { display: flex; align-items: center; gap: 9px; color: var(--lavender); font-weight: 800; letter-spacing: .16em; text-transform: uppercase; font-size: 11px; margin-bottom: 17px; }
+    .eyebrow:before { content: ""; width: 19px; height: 1px; background: var(--lavender); }
+    h1 { margin: 0; max-width: 800px; font-size: clamp(37px, 4.55vw, 65px); font-weight: 790; line-height: 1.08; letter-spacing: -.063em; }
+    h1 em { font-style: normal; color: #b3b3ff; }
+    .intro p { margin: 20px 0 0; max-width: 700px; color: var(--soft); line-height: 1.72; font-size: clamp(14px, 1.2vw, 16px); }
+    .intro-marker { display: flex; align-items: center; gap: 9px; white-space: nowrap; margin-bottom: 5px; padding: 12px 14px; font-size: 12px; color: #c5d1e2; background: rgba(255,255,255,.035); border: 1px solid var(--line); border-radius: 999px; }
+    .intro-marker .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--green); box-shadow: 0 0 0 4px rgba(97,215,178,.12); }
+    .layout { display: grid; grid-template-columns: minmax(280px, 325px) minmax(0, 1fr); gap: 18px; align-items: stretch; }
+    .panel { background: linear-gradient(155deg, rgba(22,35,57,.96), rgba(15,25,43,.98)); border: 1px solid var(--line); border-radius: 19px; box-shadow: 0 20px 50px rgba(3,10,25,.11); }
+    .controls { padding: 26px 24px 26px; }
+    .section-label { color: var(--muted); font-weight: 750; text-transform: uppercase; letter-spacing: .14em; font-size: 10px; }
+    .controls h2, .visual-head h2 { font-size: 20px; margin: 8px 0 0; font-weight: 750; letter-spacing: -.03em; }
+    .control-group { margin-top: 32px; }
+    .group-title { display:flex; align-items:baseline; justify-content:space-between; gap:12px; margin-bottom:13px; }
+    .group-title label, .group-title .group-label { color: #e5ebf7; font-size: 13px; font-weight: 675; }
+    .group-title .small-note { color: var(--muted); font-size: 12px; }
+    .dimension-options { display:grid; grid-template-columns: repeat(3, 1fr); gap: 7px; }
+    .dim-button { min-width: 0; cursor: pointer; border-radius: 11px; color: #aab8cf; text-align: center; background: rgba(10,19,35,.57); border: 1px solid rgba(144,160,191,.17); padding: 11px 3px 10px; transition: color .18s, background .18s, border-color .18s, transform .18s; }
+    .dim-button:hover { color: white; border-color: rgba(168,177,255,.46); }
+    .dim-button[aria-pressed="true"] { color: white; border-color: #8b8ae9; background: rgba(146,142,255,.17); box-shadow: inset 0 0 0 1px rgba(151,143,255,.1); }
+    .dim-button strong { font-weight: 800; display:block; font-size: 17px; letter-spacing: -.025em; }
+    .dim-button small { display: block; font-size: 10px; color: #9dabc3; margin-top: 4px; }
+    .dim-button[aria-pressed="true"] small { color: #cfccff; }
+    .range-readout { display:flex; align-items: center; justify-content: space-between; margin: 14px 0 12px; }
+    .range-readout strong { font-size: 35px; font-weight: 780; letter-spacing: -.06em; font-variant-numeric: tabular-nums; }
+    .range-readout span { font-size: 12px; color: var(--muted); text-align: right; max-width: 130px; line-height: 1.4; }
+    input[type="range"] { display:block; appearance: none; width: 100%; height: 6px; border-radius: 999px; cursor: pointer; background: linear-gradient(to right, #ada5ff 0%, #ada5ff var(--range-progress, 30%), #30425e var(--range-progress, 30%), #30425e 100%); outline-offset: 8px; }
+    input[type="range"]::-webkit-slider-thumb { appearance: none; width: 18px; height: 18px; border: 4px solid #bdacff; background: #f7f4ff; box-shadow: 0 0 0 4px rgba(164,147,255,.18); border-radius: 50%; }
+    input[type="range"]::-moz-range-thumb { width: 12px; height: 12px; border: 4px solid #bdacff; background: #f7f4ff; box-shadow: 0 0 0 4px rgba(164,147,255,.18); border-radius: 50%; }
+    .range-captions { display:flex; justify-content:space-between; color: #71839e; font-size:11px; margin-top:13px; }
+    .formula-pill { margin-top: 16px; display:block; border-radius:9px; padding:10px 12px; background: rgba(164,174,255,.07); color:#a5b4ce; font-size:11px; line-height:1.5; }
+    .formula-pill strong { color: #e2e3ff; font-weight:700; }
+    .separator { height:1px; background: var(--line); margin: 25px 0; }
+    .shuffle { display: flex; gap: 9px; justify-content: center; align-items: center; width:100%; min-height: 45px; margin-top: 25px; color: #11162a; border:none; cursor:pointer; font-weight: 790; font-size: 13px; background: linear-gradient(130deg, #c6baff, #a9baff); border-radius: 11px; box-shadow: 0 6px 18px rgba(124,117,236,.16); transition: filter .2s, transform .2s; }
+    .shuffle:hover { filter:brightness(1.1); transform:translateY(-1px); }
+    .shuffle svg { width: 16px; height:16px; }
+    .switch-row { display:flex; justify-content:space-between; align-items:center; gap:12px; color:#c4d0e3; font-size:12px; font-weight:590; cursor:pointer; padding: 8px 0; }
+    .switch-row input { appearance: none; flex:0 0 34px; width:34px; height:20px; background:#34435a; border:1px solid #465976; border-radius:99px; position:relative; cursor:pointer; outline-offset:4px; transition:background .2s; }
+    .switch-row input::before { content:""; position:absolute; width:12px; height:12px; left:3px; top:3px; border-radius:50%; background:#bbcadf; transition:transform .2s, background .2s; }
+    .switch-row input:checked { background:#817be2; border-color:#aca5f8; }
+    .switch-row input:checked::before { transform:translateX(14px); background:#fff; }
+    .legend { display:flex; flex-wrap:wrap; gap:10px 8px; margin-top:14px; }
+    .legend-key { display:flex; align-items:center; gap:7px; flex:1 0 42%; color:#aebcd3; font-size:11px; }
+    .legend-key i { display:inline-block; width:11px; height:11px; border-radius:50%; box-shadow:0 0 0 4px rgba(255,255,255,.025); }
+    .legend-note { color:#71839d; margin-top:15px; font-size:11px; line-height:1.65; }
+    .visual { min-width:0; overflow:hidden; }
+    .visual-head { display:flex; align-items:center; justify-content:space-between; gap:14px; padding: 24px 28px 16px; }
+    .visual-head h2 { margin-top:6px; }
+    .live { display:flex; align-items:center; gap:7px; color:#acb9d0; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.13em; }
+    .live span { display:inline-block; width:6px; height:6px; background:#69dcba; border-radius:50%; box-shadow:0 0 0 3px rgba(101,220,181,.12); }
+    .stage { height: clamp(390px, 42vw, 545px); min-height: 390px; position:relative; background: radial-gradient(ellipse 60% 64% at 50% 50%, rgba(68,79,142,.095), transparent 80%); overflow:hidden; }
+    .stage:before { content:""; position:absolute; inset:15px 17px; background-image:radial-gradient(rgba(151,174,217,.16) .8px, transparent .8px); background-size:23px 23px; opacity:.55; mask-image:radial-gradient(ellipse at center, #000 18%, transparent 80%); pointer-events:none; }
+    canvas { display: block; position:relative; width:100%; height:100%; outline:none; touch-action:pan-y; }
+    canvas.rotatable { cursor:grab; touch-action:none; }
+    canvas.rotatable.grabbing { cursor:grabbing; }
+    .stage-note { position:absolute; left:24px; bottom:13px; display:flex; align-items:center; gap:7px; color:#778ba9; font-size:11px; pointer-events:none; }
+    .stage-note svg { width:14px; height:14px; opacity:.9; }
+    .view-reset { position:absolute; top:4px; right:25px; display:none; align-items:center; gap:7px; padding:7px 10px; background:rgba(29,42,67,.8); border:1px solid var(--line); border-radius:8px; color:#b8c5dc; font-size:11px; cursor:pointer; }
+    .view-reset.visible { display:flex; }
+    .view-reset:hover { color:white; border-color: #8f92cd; }
+    .visual-footer { padding: 18px 26px 26px; }
+    .metric-grid { display:grid; grid-template-columns: 1fr 1fr 1fr; gap:10px; }
+    .metric { min-width:0; padding:16px 16px 15px; border-radius:12px; border:1px solid var(--line); background:rgba(24,38,61,.72); }
+    .metric-title { font-size:10px; font-weight:750; letter-spacing:.12em; color:#93a4bd; text-transform:uppercase; }
+    .metric-value { display:flex; align-items:baseline; gap:8px; margin-top:7px; font-size:30px; letter-spacing:-.055em; line-height:1.15; font-weight:770; font-variant-numeric:tabular-nums; }
+    .metric-value.gold { color:var(--gold); }
+    .metric-value .unit { color:#8fa0bc; font-weight:600; font-size:11px; letter-spacing:0; }
+    .metric-value.odd { color:#79dec1; font-size:25px; align-items:center; gap:7px; }
+    .metric-value.odd::before { content:""; width:9px; height:9px; border-radius:50%; background:currentColor; box-shadow:0 0 0 5px rgba(110,217,181,.09); }
+    .metric-value.even { color:#fa8992; font-size:25px; }
+    .focus-bar { display:flex; justify-content:space-between; align-items:center; gap:12px; padding: 16px 2px 0; }
+    .focus-message { display:flex; flex-wrap:wrap; align-items:center; gap:8px; color:#9baac1; font-size:12px; }
+    .focus-message strong { color:#e1e7f1; font-weight:700; }
+    .gold-dot { display:inline-block; width:8px; height:8px; border-radius:50%; background:var(--gold); box-shadow:0 0 0 4px rgba(255,210,125,.1); }
+    .focus-actions { display:flex; gap:6px; }
+    .mini-button { display:grid; place-items:center; width:33px; height:32px; border-radius:8px; border:1px solid var(--line-strong); color:#d1d9ed; background:rgba(255,255,255,.035); cursor:pointer; font-size:18px; }
+    .mini-button:hover:not(:disabled) { color:#fff; background:rgba(166,167,255,.18); }
+    .mini-button:disabled { opacity:.3; cursor:not-allowed; }
+    .bottom-row { display:grid; grid-template-columns: 1fr 1fr; gap:18px; margin-top:19px; }
+    .explain { padding:23px 25px; min-height:164px; }
+    .explain-title { display:flex; align-items:center; gap:10px; font-size:14px; letter-spacing:-.01em; font-weight:760; margin:0 0 13px; }
+    .explain-title .num { display:grid; place-items:center; width:26px; height:26px; border-radius:8px; background:rgba(173,170,255,.13); color:#c2baff; font-size:12px; }
+    .explain p { margin:0; line-height:1.72; font-size:13px; color:#abbad2; }
+    .explain strong { color:#f0f0fc; font-weight:700; }
+    .footnote { margin-top:20px; display:flex; justify-content:space-between; align-items:center; gap:14px; color:#627590; font-size:11px; }
+    .footnote a { color:#a6b4ea; text-decoration:none; }
+    .footnote a:hover { text-decoration:underline; }
+    @media (max-width: 1050px) {
+      .layout { grid-template-columns: 278px minmax(0, 1fr); gap:13px; }
+      .controls { padding:22px 19px; }
+      .metric { padding:14px 10px; }
+      .metric-value { font-size:26px; }
+      .visual-head { padding:22px 20px 10px; }
+      .visual-footer { padding:14px 17px 20px; }
+      .intro-marker { display:none; }
+    }
+    @media (max-width: 790px) {
+      .shell { padding:22px 17px 38px; }
+      .intro { padding-top: 49px; padding-bottom:29px; }
+      .top-caption { display:none; }
+      .layout { grid-template-columns: 1fr; }
+      .controls { padding:21px 19px; }
+      .control-group { margin-top:22px; }
+      .settings-inner { display:grid; grid-template-columns: 1fr 1fr; gap:0 20px; }
+      .settings-inner .shuffle { grid-column:1 / -1; max-width: 100%; margin-top:22px; }
+      .controls .separator { margin:19px 0; }
+      .visual-head { padding:20px 21px 9px; }
+      .visual-footer { padding:14px 18px 18px; }
+      .stage { height:470px; }
+      .bottom-row { gap:12px; margin-top:12px; }
+      .explain { padding:20px; }
+    }
+    @media (max-width: 560px) {
+      .intro { padding-top:41px; }
+      h1 { font-size: clamp(38px, 10vw, 51px); }
+      .intro p { font-size:14px; }
+      .settings-inner { grid-template-columns:1fr; gap:0; }
+      .settings-inner .shuffle { grid-column:1; }
+      .control-group { margin-top:23px; }
+      .stage { height:368px; min-height: 368px; }
+      .visual-head h2 { font-size:18px; }
+      .visual-head { padding-left:18px; padding-right:18px; }
+      .metric-grid { gap:6px; }
+      .metric { padding:13px 9px; border-radius:10px; }
+      .metric-title { font-size:8px; letter-spacing:.08em; }
+      .metric-value { font-size:24px; }
+      .metric-value.odd, .metric-value.even { font-size:20px; }
+      .metric-value .unit { display:none; }
+      .focus-message { font-size:11px; }
+      .bottom-row { grid-template-columns:1fr; }
+      .stage-note { left:16px; bottom:10px; font-size:10px; }
+      .footnote { line-height:1.6; }
+    }
+    @media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition-duration:0.001ms !important; scroll-behavior:auto !important; } }
+  </style>
+</head>
+<body>
+<div class="shell">
+  <header class="topbar">
+    <div class="identity" aria-label="Sperner Studio">
+      <div class="logo" aria-hidden="true">
+        <svg viewBox="0 0 32 32" fill="none">
+          <path d="M16 3 L29 26 H3 Z" stroke="#9CA8FA" stroke-width="1.4" />
+          <path d="M16 3 L16 15 L3 26 M16 15 L29 26" stroke="#9CA8FA" stroke-width="1" opacity=".5" />
+          <circle cx="16" cy="3" r="3.2" fill="#889FFB" />
+          <circle cx="3" cy="26" r="3.2" fill="#FA8992" />
+          <circle cx="29" cy="26" r="3.2" fill="#61D7B2" />
+          <circle cx="16" cy="15" r="2" fill="#FFD58B" />
+        </svg>
+      </div>
+      <span class="brand">sperner<span> / studio</span></span>
+    </div>
+    <span class="top-caption">An interactive mathematics playground</span>
+  </header>
+
+  <section class="intro" aria-labelledby="page-title">
+    <div>
+      <div class="eyebrow">COMBINATORIAL TOPOLOGY / 001</div>
+      <h1 id="page-title">A coloring rule.<br><em>An inevitable simplex.</em></h1>
+      <p>Explore Sperner’s lemma in one, two, or three dimensions. Refine the triangulation, try a new valid coloring, and discover why the number of fully labeled simplices is <strong style="color:#e5e4ff">always odd.</strong></p>
+    </div>
+    <div class="intro-marker"><span class="dot"></span> Boundary conditions enforced</div>
+  </section>
+
+  <main class="layout">
+    <aside class="panel controls" aria-labelledby="settings-title">
+      <div class="section-label">Experiment controls</div>
+      <h2 id="settings-title">Build your simplex</h2>
+      <div class="settings-inner">
+        <div class="control-group">
+          <div class="group-title"><span class="group-label">Dimension</span><span id="dimensionName" class="small-note">Triangle</span></div>
+          <div class="dimension-options" role="group" aria-label="Choose simplex dimension">
+            <button class="dim-button" data-dim="1" aria-pressed="false"><strong>1D</strong><small>Interval</small></button>
+            <button class="dim-button" data-dim="2" aria-pressed="true"><strong>2D</strong><small>Triangle</small></button>
+            <button class="dim-button" data-dim="3" aria-pressed="false"><strong>3D</strong><small>Tetrahedron</small></button>
+          </div>
+        </div>
+        <div class="control-group">
+          <div class="group-title"><label for="divisionRange">Subdivisions per edge</label><span class="small-note">n</span></div>
+          <div class="range-readout"><strong id="divisionValue" aria-live="off">5</strong><span>Equal steps along every edge</span></div>
+          <input id="divisionRange" type="range" min="1" max="16" step="1" value="5" aria-label="Number of subdivisions per edge" />
+          <div class="range-captions"><span>Coarse</span><span id="rangeMaximum">16 · Fine</span></div>
+          <div class="formula-pill" id="formula">The triangulation has <strong>n²</strong> small triangles.</div>
+        </div>
+        <button class="shuffle" id="shuffleButton" type="button" aria-label="Generate another valid coloring">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h3.5C12 7 12 17 16.5 17H20"/><path d="m17 14 3 3-3 3"/><path d="M4 17h3.5c1.8 0 2.9-1.9 4-4"/><path d="M15 7h5m-3-3 3 3-3 3"/></svg>
+          Try another coloring
+        </button>
+      </div>
+      <div class="separator"></div>
+      <div class="section-label">Display settings</div>
+      <div style="margin-top:13px">
+        <label class="switch-row" for="meshToggle"><span>Show triangulation mesh</span><input type="checkbox" id="meshToggle" checked /></label>
+        <label class="switch-row" for="highlightToggle"><span>Highlight fully labeled cells</span><input type="checkbox" id="highlightToggle" checked /></label>
+        <label class="switch-row" for="numbersToggle"><span>Show vertex label numbers</span><input type="checkbox" id="numbersToggle" /></label>
+      </div>
+      <div class="separator"></div>
+      <div class="section-label">Allowed vertex colors</div>
+      <div class="legend" id="colorLegend" aria-label="Vertex label color key"></div>
+      <div class="legend-note">On each boundary face, only the colors of that face’s corners are allowed.</div>
+    </aside>
+
+    <section class="panel visual" aria-label="Interactive Sperner triangulation">
+      <div class="visual-head">
+        <div><div class="section-label">Live visualization</div><h2 id="visualTitle">A subdivided triangle</h2></div>
+        <div class="live"><span></span> Valid coloring</div>
+      </div>
+      <div class="stage" id="stage">
+        <canvas id="simplexCanvas" role="img" aria-label="Triangulated triangle with boundary-respecting vertex labels; yellow triangles are fully labeled" tabindex="0"></canvas>
+        <button id="resetView" class="view-reset" type="button" title="Reset 3D rotation and zoom">↺ Reset view</button>
+        <div class="stage-note" id="stageNote">● Every vertex has one label</div>
+      </div>
+      <div class="visual-footer">
+        <div class="metric-grid" aria-live="polite" aria-atomic="true">
+          <div class="metric"><div class="metric-title">Small simplices</div><div class="metric-value"><span id="simplexCount">25</span><span class="unit" id="simplexUnit">triangles</span></div></div>
+          <div class="metric"><div class="metric-title">Fully labeled</div><div class="metric-value gold"><span id="solutionCount">—</span><span class="unit">found</span></div></div>
+          <div class="metric"><div class="metric-title">Parity check</div><div class="metric-value odd" id="parityStatus">ODD</div></div>
+        </div>
+        <div class="focus-bar">
+          <div class="focus-message"><span class="gold-dot"></span><span id="focusLabel">Showing solution 1 of 1</span></div>
+          <div class="focus-actions">
+            <button type="button" class="mini-button" id="previousSolution" aria-label="Previous fully labeled simplex">‹</button>
+            <button type="button" class="mini-button" id="nextSolution" aria-label="Next fully labeled simplex">›</button>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <section class="bottom-row" aria-label="Mathematical explanation">
+    <article class="panel explain">
+      <h2 class="explain-title"><span class="num">01</span> The boundary rule</h2>
+      <p id="boundaryExplanation">A vertex on an edge may use only the labels of the edge’s two endpoints. Each triangle’s original corners are forced to have labels <strong>0, 1, 2</strong>. Interior vertices can take any of the three labels.</p>
+    </article>
+    <article class="panel explain">
+      <h2 class="explain-title"><span class="num">02</span> Why the count is odd</h2>
+      <p id="parityExplanation">Sperner’s lemma guarantees an <strong>odd number</strong> of triangles carrying all three labels. Refining the mesh or changing the valid coloring changes the count, but never its parity.</p>
+    </article>
+  </section>
+  <footer class="footnote"><span>An interactive illustration of Sperner’s lemma · 1D, 2D, 3D</span><span>Vertices: <strong id="vertexCount" style="color:#a9b8d2">21</strong> · All calculations run locally</span></footer>
+</div>
+<script>
+(() => {
+  'use strict';
+
+  // Regular edgewise triangulation. In cumulative coordinates t_1 >= ... >= t_d,
+  // the n-fold dilated simplex is triangulated by the order-compatible Kuhn
+  // simplices of the unit lattice cubes. It has exactly n^d d-simplices.
+  const COLORS = ['#889ffb', '#fa8992', '#61d7b2', '#ffc976'];
+  const MAX_DIVISIONS = {1: 32, 2: 16, 3: 8};
+  const DIMENSIONS = {1: 'Interval', 2: 'Triangle', 3: 'Tetrahedron'};
+  const PLURAL = {1: 'segments', 2: 'triangles', 3: 'tetrahedra'};
+  const CANONICAL_CORNERS = [
+    [1, 1, 1],
+    [1, -1, -1],
+    [-1, 1, -1],
+    [-1, -1, 1]
+  ];
+  const state = {
+    dimension: 2, divisions: 5, seed: 19,
+    showMesh: true, highlight: true, showNumbers: false,
+    yaw: -0.48, pitch: -0.25, zoom: 1, focusIndex: 0,
+    complex: null, vertices: null, solutions: []
+  };
+
+  const $ = id => document.getElementById(id);
+  const canvas = $('simplexCanvas');
+  const stage = $('stage');
+  const ctx = canvas.getContext('2d', {alpha: true});
+  let viewport = {width: 750, height: 540};
+  let scheduled = false;
+  let dragging = null;
+  let cachePermutations = new Map();
+
+  function permutationsOf(d) {
+    if (cachePermutations.has(d)) return cachePermutations.get(d);
+    const result = [];
+    function walk(prefix, remaining) {
+      if (!remaining.length) { result.push(prefix); return; }
+      for (let i = 0; i < remaining.length; i++)
+        walk([...prefix, remaining[i]], [...remaining.slice(0, i), ...remaining.slice(i + 1)]);
+    }
+    walk([], Array.from({length: d}, (_, i) => i));
+    cachePermutations.set(d, result);
+    return result;
+  }
+
+  function makeComplex(d, n) {
+    const vertices = [];
+    const simplices = [];
+    const vertexIndex = new Map();
+
+    function addVertex(t) {
+      const bary = [n - t[0]];
+      for (let i = 1; i < d; i++) bary.push(t[i - 1] - t[i]);
+      bary.push(t[d - 1]);
+      const key = bary.join(',');
+      if (vertexIndex.has(key)) return vertexIndex.get(key);
+      const idx = vertices.length;
+      const isCorner = bary.some(value => value === n);
+      vertices.push({bary, key, isCorner, label: -1});
+      vertexIndex.set(key, idx);
+      return idx;
+    }
+
+    function ordered(t) {
+      if (t[0] < 0 || t[0] > n) return false;
+      for (let i = 1; i < d; i++) if (t[i] < 0 || t[i] > t[i - 1]) return false;
+      return true;
+    }
+
+    function addCells(base) {
+      for (const perm of permutationsOf(d)) {
+        const t = base.slice();
+        const corners = [addVertex(t)];
+        let legal = true;
+        for (const axis of perm) {
+          t[axis]++;
+          if (!ordered(t)) { legal = false; break; }
+          corners.push(addVertex(t));
+        }
+        if (legal) simplices.push(corners);
+      }
+    }
+
+    function enumerateBase(base) {
+      if (base.length === d) { addCells(base); return; }
+      const upper = base.length === 0 ? n - 1 : base[base.length - 1];
+      for (let x = 0; x <= upper; x++) enumerateBase([...base, x]);
+    }
+    enumerateBase([]);
+
+    // Remove lattice points created as speculative vertices in rejected cells.
+    // This cannot happen outside the simplex, but an unused cube-start point is
+    // possible; keeping only vertices in legal cells avoids stray visual dots.
+    const used = new Set(simplices.flat());
+    const remap = new Map();
+    const activeVertices = [];
+    vertices.forEach((vertex, i) => {
+      if (used.has(i)) {
+        remap.set(i, activeVertices.length);
+        activeVertices.push(vertex);
+      }
+    });
+    const cells = simplices.map(c => c.map(id => remap.get(id)));
+    const edges = new Map();
+    for (const c of cells) {
+      for (let i = 0; i < c.length; i++) for (let j = i + 1; j < c.length; j++) {
+        const a = Math.min(c[i], c[j]), b = Math.max(c[i], c[j]);
+        edges.set(`${a},${b}`, [a,b]);
+      }
+    }
+    const cornerIDs = Array.from({length:d+1}, (_, label) => activeVertices.findIndex(v => v.bary[label] === n));
+    return {dimension:d, n, vertices:activeVertices, simplices:cells, edges:[...edges.values()], cornerIDs};
+  }
+
+  function hashVertex(bary, seed) {
+    let x = (seed ^ 0x9e3779b9) >>> 0;
+    for (const coordinate of bary) {
+      x ^= (coordinate + 0x7ed55d16 + (x << 6) + (x >>> 2)) >>> 0;
+      x = Math.imul(x ^ (x >>> 15), 0x85ebca6b) >>> 0;
+    }
+    x ^= x >>> 16;
+    x = Math.imul(x, 0x7feb352d) >>> 0;
+    x ^= x >>> 15;
+    return x >>> 0;
+  }
+
+  function colorComplex(complex, seed) {
+    for (const vertex of complex.vertices) {
+      const allowed = vertex.bary.map((value, i) => value > 0 ? i : -1).filter(i => i >= 0);
+      vertex.label = allowed[hashVertex(vertex.bary, seed) % allowed.length];
+    }
+    const solutions = [];
+    const number = complex.dimension + 1;
+    for (let i = 0; i < complex.simplices.length; i++) {
+      const labels = complex.simplices[i].map(id => complex.vertices[id].label);
+      if (new Set(labels).size === number) solutions.push(i);
+    }
+    return solutions;
+  }
+
+  function rebuildMesh() {
+    state.complex = makeComplex(state.dimension, state.divisions);
+    recolor();
+  }
+
+  function recolor() {
+    state.solutions = colorComplex(state.complex, state.seed);
+    state.focusIndex = 0;
+    updateMetrics();
+    scheduleDraw();
+    if (state.solutions.length % 2 !== 1) {
+      console.error('Parity invariant violated. Check the triangulation/coloring construction.');
+    }
+  }
+
+  function updateMetrics() {
+    const {dimension:d, divisions:n, complex} = state;
+    $('dimensionName').textContent = DIMENSIONS[d];
+    $('divisionValue').textContent = n;
+    $('divisionRange').value = n;
+    $('divisionRange').max = MAX_DIVISIONS[d];
+    $('divisionRange').style.setProperty('--range-progress', `${100 * (n - 1) / (MAX_DIVISIONS[d] - 1)}%`);
+    $('rangeMaximum').textContent = `${MAX_DIVISIONS[d]} · Fine`;
+    $('formula').innerHTML = `The triangulation has <strong>n${d === 1 ? '' : d === 2 ? '²' : '³'} = ${n ** d}</strong> small ${PLURAL[d]}.`;
+    $('simplexCount').textContent = complex.simplices.length.toLocaleString();
+    $('simplexUnit').textContent = PLURAL[d];
+    $('solutionCount').textContent = state.solutions.length.toLocaleString();
+    $('vertexCount').textContent = complex.vertices.length.toLocaleString();
+    const parity = $('parityStatus');
+    parity.textContent = state.solutions.length % 2 ? 'ODD ✓' : 'EVEN !';
+    parity.className = `metric-value ${state.solutions.length % 2 ? 'odd' : 'even'}`;
+    $('focusLabel').innerHTML = state.highlight && state.solutions.length
+      ? `Spotlight <strong>${state.focusIndex + 1}</strong> of <strong>${state.solutions.length}</strong> fully labeled ${PLURAL[d]}`
+      : 'Turn on highlights to inspect solutions';
+    $('previousSolution').disabled = !state.highlight || state.solutions.length <= 1;
+    $('nextSolution').disabled = !state.highlight || state.solutions.length <= 1;
+    $('visualTitle').textContent = ({1: 'A subdivided interval', 2: 'A subdivided triangle', 3: 'A subdivided tetrahedron'})[d];
+    $('resetView').classList.toggle('visible', d === 3);
+    $('stageNote').innerHTML = d === 3
+      ? '<span aria-hidden="true">✥</span> Drag to rotate · Scroll to zoom'
+      : '● Every vertex has one label';
+    canvas.classList.toggle('rotatable', d === 3);
+    canvas.setAttribute('aria-label', `A ${d}D simplex with ${complex.simplices.length} small ${PLURAL[d]}; ${state.solutions.length} of them are fully labeled. ${d === 3 ? 'Drag to rotate.' : ''}`);
+    document.querySelectorAll('.dim-button').forEach(button => button.setAttribute('aria-pressed', `${Number(button.dataset.dim) === d}`));
+    $('colorLegend').innerHTML = COLORS.slice(0, d + 1).map((color, index) =>
+      `<div class="legend-key"><i style="background:${color}"></i> Label ${index}</div>`).join('');
+    const rules = {
+      1: 'The two endpoints have different forced labels: <strong>0</strong> and <strong>1</strong>. Every other vertex can use either color.',
+      2: 'Each outer edge allows only the labels of its two endpoints. The three original corners are forced to be <strong>0, 1, 2</strong>; interior vertices may use any label.',
+      3: 'On every triangular boundary face, labels must come from that face’s three corners. The four original corners are labeled <strong>0, 1, 2, 3</strong>.'
+    };
+    const reasons = {
+      1: 'Moving from one endpoint to the other, the label must switch an <strong>odd number</strong> of times. Every switch is a fully labeled segment.',
+      2: 'Sperner’s lemma guarantees an <strong>odd number</strong> of triangles with all three labels. Refining or recoloring changes the count, not the parity.',
+      3: 'The same parity argument works in 3D: an <strong>odd number</strong> of tetrahedra have all four labels, no matter how this valid coloring is chosen.'
+    };
+    $('boundaryExplanation').innerHTML = rules[d];
+    $('parityExplanation').innerHTML = reasons[d];
+  }
+
+  function setupDimension(d) {
+    if (d === state.dimension) return;
+    state.dimension = d;
+    state.divisions = Math.min(state.divisions, MAX_DIVISIONS[d]);
+    state.yaw = -0.48; state.pitch = -0.25; state.zoom = 1;
+    rebuildMesh();
+  }
+
+  function scheduleDraw() {
+    if (scheduled) return;
+    scheduled = true;
+    requestAnimationFrame(() => { scheduled = false; draw(); });
+  }
+
+  function resizeCanvas() {
+    const rect = stage.getBoundingClientRect();
+    const width = Math.max(280, rect.width), height = Math.max(250, rect.height);
+    viewport = {width, height};
+    const ratio = Math.min(window.devicePixelRatio || 1, 2);
+    canvas.width = Math.round(width * ratio);
+    canvas.height = Math.round(height * ratio);
+    canvas.style.width = `${width}px`;
+    canvas.style.height = `${height}px`;
+    ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+    scheduleDraw();
+  }
+
+  function projectedVertices() {
+    const {width:w, height:h} = viewport;
+    const d = state.dimension, n = state.divisions;
+    const midX = w / 2, midY = h / 2 - 3;
+    let points;
+    if (d === 1) {
+      const extent = Math.min((w - 107) / 2, 340);
+      points = state.complex.vertices.map(v => {
+        const x = -1 + 2 * v.bary[1] / n;
+        return {x:midX + x * extent, y:midY + 12, z:0};
+      });
+    } else if (d === 2) {
+      const basis = [[0, -1], [-.94, .70], [.94, .70]];
+      const scale = Math.min((w - 92)/1.96, (h - 106)/1.84, 308);
+      points = state.complex.vertices.map(v => {
+        const u = v.bary.reduce((sum, value, i) => sum + basis[i][0] * value / n, 0);
+        const q = v.bary.reduce((sum, value, i) => sum + basis[i][1] * value / n, 0);
+        return {x:midX + u*scale, y:midY + q*scale, z:0};
+      });
+    } else {
+      const cy = Math.cos(state.yaw), sy = Math.sin(state.yaw);
+      const cp = Math.cos(state.pitch), sp = Math.sin(state.pitch);
+      const scale = Math.min((w-104)/3.2, (h-95)/3.1, 183) * state.zoom;
+      points = state.complex.vertices.map(v => {
+        let x=0, y=0, z=0;
+        for (let i=0; i<4; i++) {
+          const ratio = v.bary[i] / n;
+          x += CANONICAL_CORNERS[i][0] * ratio;
+          y += CANONICAL_CORNERS[i][1] * ratio;
+          z += CANONICAL_CORNERS[i][2] * ratio;
+        }
+        const x1 = x*cy - z*sy;
+        const z1 = x*sy + z*cy;
+        const y2 = y*cp - z1*sp;
+        const z2 = y*sp + z1*cp;
+        const perspective = 4.2 / (4.2 - z2*.55);
+        return {x:midX + x1*scale*perspective, y:midY - y2*scale*perspective, z:z2};
+      });
+    }
+    return points;
+  }
+
+  function polygon(points, fill, stroke, width=1) {
+    if (!points.length) return;
+    ctx.beginPath(); ctx.moveTo(points[0].x, points[0].y);
+    for (let i=1; i<points.length; i++) ctx.lineTo(points[i].x, points[i].y);
+    ctx.closePath();
+    if (fill) { ctx.fillStyle = fill; ctx.fill(); }
+    if (stroke) { ctx.strokeStyle = stroke; ctx.lineWidth = width; ctx.stroke(); }
+  }
+
+  function pathSegment(a,b,color,width) {
+    ctx.strokeStyle=color; ctx.lineWidth=width; ctx.lineCap='round';
+    ctx.beginPath(); ctx.moveTo(a.x,a.y); ctx.lineTo(b.x,b.y); ctx.stroke();
+  }
+
+  function point(x,y,r,color,ring) {
+    ctx.beginPath(); ctx.arc(x,y,r,0,Math.PI*2);
+    ctx.fillStyle=color; ctx.fill();
+    if (ring) {ctx.strokeStyle=ring;ctx.lineWidth=1.6;ctx.stroke();}
+  }
+
+  function simplexCentroid(simplex, p) {
+    const count = simplex.length;
+    return simplex.reduce((a, id) => ({x:a.x + p[id].x/count, y:a.y+p[id].y/count, z:a.z+p[id].z/count}),{x:0,y:0,z:0});
+  }
+
+  function solutionMark(center, selected, dim) {
+    if (selected) {
+      const r=dim===3 ? 13 : 15;
+      const glow=ctx.createRadialGradient(center.x,center.y,0,center.x,center.y,r*2.5);
+      glow.addColorStop(0,'rgba(255,214,137,.31)'); glow.addColorStop(1,'rgba(255,214,137,0)');
+      point(center.x,center.y,r*2.5,glow);
+      point(center.x,center.y,5,'#fff1cc','#e8b765');
+      point(center.x,center.y,2,'#d99b3f');
+    } else point(center.x,center.y,dim===3 ? 2.9 : 3.4,'#ffe2a6','rgba(89,60,25,.4)');
+  }
+
+  function draw1D(p) {
+    const cells=state.complex.simplices;
+    for (const c of cells) {
+      const a=p[c[0]], b=p[c[1]];
+      pathSegment(a,b,'rgba(140,164,207,.28)',7);
+    }
+    if (state.showMesh) for (const c of cells) {
+      const a=p[c[0]], b=p[c[1]];
+      pathSegment(a,b,'rgba(120,147,199,.6)',1.5);
+    }
+    if (state.highlight) {
+      state.solutions.forEach((idx, si) => {
+        const c=cells[idx], a=p[c[0]], b=p[c[1]];
+        const selected=si===state.focusIndex;
+        if (selected) pathSegment(a,b,'rgba(255,202,112,.21)',22);
+        pathSegment(a,b,selected?'#ffe7ac':'#eaba75',selected?8:6);
+        if (selected) solutionMark(simplexCentroid(c,p),true,1);
+      });
+    }
+  }
+
+  function draw2D(p) {
+    const complex=state.complex;
+    if (state.showMesh) {
+      complex.simplices.forEach((cell,i) => polygon(cell.map(id=>p[id]), i%2 ? 'rgba(101,117,166,.035)' : 'rgba(140,155,202,.052)',null));
+      for (const [a,b] of complex.edges) pathSegment(p[a],p[b],'rgba(137,158,204,.37)',1);
+    }
+    const corners=complex.cornerIDs.map(id=>p[id]);
+    polygon(corners,null,'rgba(161,181,226,.65)',2.2);
+    if (state.highlight) {
+      state.solutions.forEach((idx,si) => {
+        const cell=complex.simplices[idx];
+        const selected=si===state.focusIndex;
+        polygon(cell.map(id=>p[id]), selected?'rgba(255,205,126,.39)':'rgba(255,205,126,.22)',selected?'#fff0ca':'rgba(255,211,138,.91)',selected?2.9:1.6);
+        solutionMark(simplexCentroid(cell,p),selected,2);
+      });
+    }
+  }
+
+  function tetraFaces(cell) {
+    return [[cell[0],cell[1],cell[2]], [cell[0],cell[1],cell[3]], [cell[0],cell[2],cell[3]], [cell[1],cell[2],cell[3]]];
+  }
+
+  function draw3D(p) {
+    const complex=state.complex;
+    const hullFaces=[[0,1,2],[0,1,3],[0,2,3],[1,2,3]].map(face => face.map(i=>complex.cornerIDs[i]));
+    hullFaces.sort((a,b)=>a.reduce((z,i)=>z+p[i].z,0)-b.reduce((z,i)=>z+p[i].z,0));
+    hullFaces.forEach(face=>polygon(face.map(id=>p[id]),'rgba(127,151,211,.035)',null));
+    if (state.showMesh) {
+      const sorted=complex.edges.slice().sort((a,b)=>(p[a[0]].z+p[a[1]].z)-(p[b[0]].z+p[b[1]].z));
+      sorted.forEach(([a,b]) => {
+        const dep=(p[a].z+p[b].z)/2;
+        const alpha= Math.min(.34, Math.max(.07, .18 + dep*.045));
+        pathSegment(p[a],p[b],`rgba(139,164,212,${alpha})`,.9);
+      });
+    }
+    // A transparent tetrahedral hull. Keep external edges visible even without the mesh.
+    const cornerIDs=complex.cornerIDs;
+    for (let a=0; a<4; a++) for (let b=a+1; b<4; b++)
+      pathSegment(p[cornerIDs[a]],p[cornerIDs[b]],'rgba(159,178,232,.76)',1.65);
+
+    if (state.highlight) {
+      const sortedSolutions=state.solutions.map((cellId,si)=>({cellId,si,center:simplexCentroid(complex.simplices[cellId],p)}));
+      sortedSolutions.sort((a,b)=>a.center.z-b.center.z);
+      const opacity=Math.max(.04, Math.min(.16, 2.8/state.solutions.length));
+      for (const {cellId,si,center} of sortedSolutions) {
+        const selected=si===state.focusIndex;
+        const cell=complex.simplices[cellId];
+        const faces=tetraFaces(cell).sort((a,b)=>a.reduce((z,i)=>z+p[i].z,0)-b.reduce((z,i)=>z+p[i].z,0));
+        for (const face of faces) {
+          polygon(face.map(id=>p[id]),`rgba(255,205,120,${selected?.30:opacity})`,null);
+        }
+        for (let a=0;a<4;a++) for(let b=a+1;b<4;b++)
+          pathSegment(p[cell[a]],p[cell[b]], selected?'#ffe3a3':'rgba(251,204,123,.55)',selected?2.5:1.05);
+        solutionMark(center,selected,3);
+      }
+    }
+  }
+
+  function drawVertexDots(p) {
+    const {dimension:d, divisions:n, complex} = state;
+    const baseRadius=d===3? (n>6 ? 2.0 : 2.65) : d===2 ? (n>11 ? 2.65 : 3.5) : 4.2;
+    const vertices=complex.vertices.map((v,i)=>({v,i,pos:p[i]}));
+    if (d===3) vertices.sort((a,b)=>a.pos.z-b.pos.z);
+    for(const {v,pos} of vertices) {
+      if (v.isCorner) continue;
+      point(pos.x,pos.y,baseRadius,COLORS[v.label]);
+      if (state.showNumbers) {
+        const labelSize = d===1 ? 11 : d===3 ? (n>=7 ? 7 : 8) : (n>=13 ? 7 : 9);
+        ctx.fillStyle='#101729';ctx.font=`700 ${labelSize}px ui-sans-serif,system-ui`;
+        ctx.textAlign='center';ctx.textBaseline='middle';
+        point(pos.x,pos.y,d===1?9:d===3?(n>=7?5:6.2):(n>=13?6:7.2),COLORS[v.label],'rgba(255,255,255,.28)');
+        ctx.fillText(String(v.label),pos.x,pos.y+.3);
+      }
+    }
+    for(let label=0; label<complex.cornerIDs.length; label++) {
+      const center=p[complex.cornerIDs[label]];
+      const color=COLORS[label];
+      point(center.x,center.y,d===3?8.5:8,color,'rgba(255,255,255,.79)');
+      const outwardX=center.x-viewport.width/2;
+      const outwardY=center.y-viewport.height/2;
+      let dx=outwardX===0?0:Math.sign(outwardX)*19;
+      let dy=outwardY===0?-23:Math.sign(outwardY)*21;
+      if (d===1) {dx=0;dy=-32;}
+      if (d===3) {dx=Math.sign(outwardX || 1)*20;dy=Math.sign(outwardY || -1)*19;}
+      ctx.font='700 14px ui-sans-serif,system-ui';
+      ctx.textAlign='center';ctx.textBaseline='middle';
+      ctx.fillStyle=color;
+      ctx.fillText(String(label),center.x+dx,center.y+dy);
+    }
+  }
+
+  function draw() {
+    if (!state.complex) return;
+    const p=projectedVertices();
+    ctx.clearRect(0,0,viewport.width,viewport.height);
+    ctx.save();
+    if(state.dimension===1) draw1D(p);
+    if(state.dimension===2) draw2D(p);
+    if(state.dimension===3) draw3D(p);
+    drawVertexDots(p);
+    ctx.restore();
+  }
+
+  document.querySelectorAll('.dim-button').forEach(button => {
+    button.addEventListener('click', () => setupDimension(Number(button.dataset.dim)));
+  });
+  $('divisionRange').addEventListener('input', event => {
+    state.divisions=Number(event.target.value);
+    rebuildMesh();
+  });
+  $('shuffleButton').addEventListener('click',()=>{
+    state.seed = (state.seed + 7919) >>> 0;
+    recolor();
+  });
+  $('meshToggle').addEventListener('change', event=>{state.showMesh=event.target.checked;scheduleDraw();});
+  $('highlightToggle').addEventListener('change',event=>{
+    state.highlight=event.target.checked;updateMetrics();scheduleDraw();
+  });
+  $('numbersToggle').addEventListener('change', event=>{state.showNumbers=event.target.checked;scheduleDraw();});
+  function focusBy(delta) {
+    if (!state.solutions.length) return;
+    state.focusIndex=(state.focusIndex+delta+state.solutions.length)%state.solutions.length;
+    updateMetrics();scheduleDraw();
+  }
+  $('previousSolution').addEventListener('click',()=>focusBy(-1));
+  $('nextSolution').addEventListener('click',()=>focusBy(1));
+  $('resetView').addEventListener('click',()=>{state.yaw=-.48;state.pitch=-.25;state.zoom=1;scheduleDraw();});
+
+  canvas.addEventListener('pointerdown',event=>{
+    if(state.dimension!==3) return;
+    dragging={id:event.pointerId, x:event.clientX, y:event.clientY};
+    canvas.setPointerCapture(event.pointerId);
+    canvas.classList.add('grabbing');
+  });
+  canvas.addEventListener('pointermove',event=>{
+    if(!dragging || event.pointerId!==dragging.id) return;
+    state.yaw+=(event.clientX-dragging.x)*.012;
+    state.pitch=Math.max(-1.47,Math.min(1.47,state.pitch+(event.clientY-dragging.y)*.010));
+    dragging.x=event.clientX;dragging.y=event.clientY;
+    scheduleDraw();
+  });
+  function releaseDrag(event) {
+    if(dragging && event.pointerId===dragging.id) dragging=null;
+    canvas.classList.remove('grabbing');
+  }
+  canvas.addEventListener('pointerup', releaseDrag);
+  canvas.addEventListener('pointercancel', releaseDrag);
+  canvas.addEventListener('wheel',event=>{
+    if(state.dimension!==3) return;
+    event.preventDefault();
+    state.zoom=Math.max(.63,Math.min(1.62,state.zoom*Math.exp(-event.deltaY*.001)));
+    scheduleDraw();
+  },{passive:false});
+  canvas.addEventListener('keydown',event=>{
+    if(state.dimension===3) {
+      if (event.key==='ArrowLeft') {state.yaw-=.13;event.preventDefault();}
+      else if (event.key==='ArrowRight') {state.yaw+=.13;event.preventDefault();}
+      else if (event.key==='ArrowUp') {state.pitch-=.13;event.preventDefault();}
+      else if (event.key==='ArrowDown') {state.pitch+=.13;event.preventDefault();}
+      else return;
+      scheduleDraw();
+    }
+  });
+
+  // Small public inspection hook for teaching, testing, or a browser console.
+  window.spernerStudio = {
+    inspect: () => ({
+      dimension:state.dimension,
+      subdivisions:state.divisions,
+      vertices:state.complex.vertices.length,
+      simplices:state.complex.simplices.length,
+      fullyLabeled:state.solutions.length,
+      odd:state.solutions.length%2===1,
+      boundaryValid:state.complex.vertices.every(v=>v.bary[v.label]>0)
+    }),
+    set: (dimension, divisions, seed=state.seed) => {
+      if(![1,2,3].includes(dimension)) throw Error('Dimension must be 1, 2, or 3.');
+      if(!Number.isInteger(divisions)||divisions<1||divisions>MAX_DIVISIONS[dimension]) throw Error(`Subdivisions must be between 1 and ${MAX_DIVISIONS[dimension]}.`);
+      state.dimension=dimension;state.divisions=divisions;state.seed=seed>>>0;
+      rebuildMesh();
+      return window.spernerStudio.inspect();
+    }
+  };
+
+  rebuildMesh();
+  resizeCanvas();
+  if (typeof ResizeObserver !== 'undefined') new ResizeObserver(resizeCanvas).observe(stage);
+  else window.addEventListener('resize', resizeCanvas);
+})();
+</script>
+</body>
+</html>
